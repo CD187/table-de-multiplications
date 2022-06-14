@@ -261,19 +261,25 @@ class TUI_Linux(Game):
         self.by_operand_average()
         a = self.general_average()
         b = self.last_trial_average()
+        def colorized_average(number):
+            if number < 10:
+                typed_color = '\x1b[31m'
+            elif 10 <= number < 15:
+                typed_color = '\x1b[33m'
+            elif 15 <= number <= 20:
+                typed_color = '\x1b[32m'
+            old_mode = '\x1b[37m'
+            string = f"{typed_color}{number}{old_mode}"
+            return string
         if b: 
-            print(f"ta moyenne generale est de : \x1b[32m{a}\x1b[37m\n\n") 
-            print(f"le score de ta dernière partie est : \x1b[32m{b}\x1b[37m\n\n") 
+            A = colorized_average(a)
+            B = colorized_average(b)
+            print(f"ta moyenne generale est de : {A}\n\n") 
+            print(f"le score de ta dernière partie est : {B}\n\n") 
             print(f"Ta moyenne pour chaque table est de :\n")
             for k,v in self.by_op_average.items():
-                if v < 10:
-                    typed_color = '\x1b[31m'
-                elif 10 <= v < 15:
-                    typed_color = '\x1b[33m'
-                elif 15 <= v <= 20:
-                        typed_color = '\x1b[32m'
-                old_mode = '\x1b[37m'
-                print(    f"Table de {k} : {typed_color}{v}{old_mode}")
+                V = colorized_average(v)
+                print(    f"Table de {k} : {V}")
             weakness = self.weakness()
             if weakness == None:
                 print("Bravo ! pour le moment c'est un sans faute !\n\n") 
@@ -288,7 +294,7 @@ class TUI_Linux(Game):
         back = self._custom_input(lambda prop : True if prop.startswith('\x0d') else False,
                                   lambda char : True if char == '\x0d' else False,
                                   prompt = 'Appuie sur entrée pour revenir au menu précédent')
-
+                                                                                                                   
     def play(self):
         os.system('clear')
         trial = self.trial()
