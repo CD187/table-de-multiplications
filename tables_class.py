@@ -11,11 +11,11 @@ from collections import defaultdict
 class Game:
     def __init__(self):
         self.log_dir()
-        self.max_trial = 4         # hard-coded value which defines number of trial in a game
+        self.max_trial = 30         # hard-coded value which defines number of trial in a game
 
     def log_dir(self):
         main_dir = './table_de_multiplication'
-        path_log = main_dir + '/logs'
+        path_log = main_dir + '/.logs'
         try:
             self.users = os.listdir(path_log)
         except FileNotFoundError:
@@ -269,7 +269,7 @@ class TUI_Linux(Game):
             elif 15 <= number <= 20:
                 typed_color = '\x1b[32m'
             old_mode = '\x1b[37m'
-            string = f"{typed_color}{number}{old_mode}"
+            string = f"{typed_color}{number}{old_mode}" 
             return string
         if b: 
             A = colorized_average(a)
@@ -294,7 +294,7 @@ class TUI_Linux(Game):
         back = self._custom_input(lambda prop : True if prop.startswith('\x0d') else False,
                                   lambda char : True if char == '\x0d' else False,
                                   prompt = 'Appuie sur entrée pour revenir au menu précédent')
-                                                                                                                   
+
     def play(self):
         os.system('clear')
         trial = self.trial()
