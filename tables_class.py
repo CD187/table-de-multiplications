@@ -57,50 +57,46 @@ class Game:
             return self.max_trial          
 
                    
-#creates two counting dictionnaries for each pair of operands (8 3 : 1,2 6 : 3,...) one for right answer, an other one for wrong. 
-#this function return these 2 dictionnaries as attributes and return a third atribute which is a list of each primary operands.
+#creates counting dictionnary for each pair of operands (8 3 : (right, wrong) ...)  
+#this function return this dictionnary as attribute and return a second attribute which is a list of each primary operands.
     def dict_maker(self):          
         with open(f'{self.path_log}/{self.player_name}', 'r') as file:
             lines = list(file)
-            right_dict = defaultdict(int)
-            wrong_dict = defaultdict(int)
+            general_dict=defaultdict(lambda : (0,0)
             primary_operand = list() 
             for line in lines:
                 if len(values := line.split()) == 5:       #5 refers to self.play()
-                    if values[3] == values[4]:
-                        right_dict[f'{values[1]} {values[2]}'] += 1
+                    right, wrong = general_dict[f'{values[1]} {values[2]}'] 
+                    if values[3] == values[4]:             #if player's answer = right result
+                        right += 1
                     else :
-                        wrong_dict[f'{values[1]} {values[2]}'] += 1
+                        wrong += 1
+                    general_dict[f'{values[1]} {values[2]}'] = (right, wrong)     
                     if values[1] not in primary_operand:
                         primary_operand.append(values[1])
             primary_operand.sort()
-            self.general_right_dict = right_dict
-            self.general_wrong_dict = wrong_dict
+            self.general_dict = general_dict
             self.primary_operand = primary_operand 
 
 #creates a dictionnary with key = 'primary operand' and value = average
     def by_operand_average(self):
-        right_answer = defaultdict(int)
-        wrong_answer = defaultdict(int)
-        by_operand_average = defaultdict(int)
+        by_operand_dict = defaultdict(lambda : (0,0))
         for number in self.primary_operand:
-            for k,total in self.general_right_dict.items():
+            for key,value in self.general_dict.items():
                 if k.startswith(number):
-                    right_answer[number] += total 
-            for k,total in self.general_wrong_dict.items():
-                if k.startswith(number):
-                    wrong_answer[number] += total 
-            if (right := right_answer.get(number)) == None:     #in case all user's answers are falses or new player
-                right = 0
-            if (wrong := wrong_answer.get(number)) == None:     #in case all user's answers are rights or new player
-                wrong = 0
+                right, wrong = value
+                r,w = by_operand_dict[number]
+                r = r + right
+                w = w + wrong
+                by_operand_dict[number]=(r,w) 
+            right, wrong = by_operand_dict[number]
             by_operand_average[number]= round(right / (right + wrong) * 20, 2)
         self.by_op_average = by_operand_average
 
     def general_average(self):
         try:
-            total_r = sum(self.general_right_dict.values())
-            total_w = sum(self.general_wrong_dict.values())
+            total_r = sum(value[0] for value in self.general_right_dict.values())
+            total_w = sum(value[1] for value in self.general_wrong_dict.values())
             return round(total_r / (total_r + total_w) * 20, 2)
         except:
             return None     #if new player, ZeroDivisionError 
