@@ -62,7 +62,7 @@ class Game:
     def dict_maker(self):          
         with open(f'{self.path_log}/{self.player_name}', 'r') as file:
             lines = list(file)
-            general_dict=defaultdict(lambda : (0,0)
+            general_dict=defaultdict(lambda : (0,0))
             primary_operand = list() 
             for line in lines:
                 if len(values := line.split()) == 5:       #5 refers to self.play()
@@ -81,22 +81,23 @@ class Game:
 #creates a dictionnary with key = 'primary operand' and value = average
     def by_operand_average(self):
         by_operand_dict = defaultdict(lambda : (0,0))
+        by_operand_average = defaultdict(int)
         for number in self.primary_operand:
             for key,value in self.general_dict.items():
-                if k.startswith(number):
-                right, wrong = value
-                r,w = by_operand_dict[number]
-                r = r + right
-                w = w + wrong
-                by_operand_dict[number]=(r,w) 
+                if key.startswith(number):
+                    right, wrong = value
+                    r,w = by_operand_dict[number]
+                    r = r + right
+                    w = w + wrong
+                    by_operand_dict[number]=(r,w) 
             right, wrong = by_operand_dict[number]
             by_operand_average[number]= round(right / (right + wrong) * 20, 2)
         self.by_op_average = by_operand_average
 
     def general_average(self):
         try:
-            total_r = sum(value[0] for value in self.general_right_dict.values())
-            total_w = sum(value[1] for value in self.general_wrong_dict.values())
+            total_r = sum(value[0] for value in self.general_dict.values())
+            total_w = sum(value[1] for value in self.general_dict.values())
             return round(total_r / (total_r + total_w) * 20, 2)
         except:
             return None     #if new player, ZeroDivisionError 
@@ -343,7 +344,6 @@ class GUI_tk(Game):
 class TUI_Windows(Game):
     pass
 
-
 if __name__ == '__main__':
     #try:
     #    import tkinter as tk
@@ -363,11 +363,10 @@ if __name__ == '__main__':
         launch.menu_select_player()
         launch.dict_maker()
         launch.by_operand_average()
-        change_player = False
-        while change_player == False:
+        while True:
             choice = launch.menu_player()
             if choice == -1:
-                change_player == True
+                break
             elif choice == 0:
                 launch.player_statistics()
             elif choice == 1:
