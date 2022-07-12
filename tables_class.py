@@ -91,14 +91,14 @@ class Game:
                     w = w + wrong
                     by_operand_dict[number]=(r,w) 
             right, wrong = by_operand_dict[number]
-            by_operand_average[number]= round(right / (right + wrong) * 20, 2)
+            by_operand_average[number]= round(right / (right + wrong) * 20, 1)
         self.by_op_average = by_operand_average
 
     def general_average(self):
         try:
             total_r = sum(value[0] for value in self.general_dict.values())
             total_w = sum(value[1] for value in self.general_dict.values())
-            return round(total_r / (total_r + total_w) * 20, 2)
+            return round(total_r / (total_r + total_w) * 20, 1)
         except:
             return None     #if new player, ZeroDivisionError 
 
@@ -128,7 +128,7 @@ class Game:
                         else:
                             wrong += 1
                         trial += 1
-                return round(right / (right + wrong)* 20, 2)                
+                return round(right / (right + wrong)* 20, 1)                
             except:
                 return None     #if new player : ZeroDivisionError 
 
@@ -249,7 +249,7 @@ class TUI_Linux(Game):
     
     def middle_window(self, string, size = None, prefixe = None, suffixe = None):
         col, lin = os.get_terminal_size()
-        spaces = round((col - len(string)) / 2)
+        spaces = round((col - len(string) + self.len_esc_str(string)) / 2)
         if size and prefixe and suffixe:
             try:
                 a = size - len(string)
@@ -258,17 +258,62 @@ class TUI_Linux(Game):
             except:
                 pass
             colored_spaces = spaces - round((col-size) / 2)
-            new_string = (spaces - colored_spaces) * ' ' + prefixe + colored_spaces * ' '+string + (a - colored_spaces) * ' ' + suffixe
+            new_string = (spaces - colored_spaces) * ' ' + prefixe + colored_spaces * ' '+ string + (a - colored_spaces) * ' ' + suffixe
         else:
             new_string = spaces * ' ' + string
         return new_string
+   
+    def len_esc_str(self,string):
+        counter = 0
+        flag = 0
+        for char in string:
+            if char == '\x1b':
+                flag = 1
+            if flag == 1:
+                counter += 1
+            if flag == 1 and char == 'm':
+                flag = 0
+        return counter
+    
+    def _print_char_by_char(self, string, time, middle = None, clear = None, new_line = None):
+        if clear:
+            os.system('clear')
+        if new_line:
+            print()
+        old_mode = tcgetattr(sys.stdin)
+        new_mode = tcgetattr(sys.stdin)
+        new_mode[3] = new_mode[3] & ~ECHO
+        try:
+            tcsetattr(sys.stdin,TCSADRAIN,new_mode)
+            i = 0
+            if middle : 
+                string = ' ' + self.middle_window(string) # ' ' IS A HACK ! WE HAVE TO FIX IT ! (check middle_win)
+                flag = 0
+                for char in string:
+                    if char == ' ': 
+                        i += 1
+                    if char == '\x1b':
+                        flag = 1
+                    if flag == 1:
+                        counter += 1
+                    if flag == 1 and char == 'm':
+                        break
+            while i != len(string) + 1:
+                print('\x1b[2k', end='')
+                print(string[:i], end='\r')
+                i += 1
+                sleep(time)
+        finally:
+            tcsetattr(sys.stdin,TCSAFLUSH, old_mode)
+        if new_line:
+            print()
 
-    def menu_select_player(self):
+    def menu_select_player(self, title):
         sys.stdout.write('\x1b[?25l')                   #hide cursor 
         max_len_player_name = 16
         if len(self.players) < 9:                       #max 10 players
             self.players.append('nouveau joueur')
-        player_name = self.menu_selector(self.players, 24, '\x1b[30;107m', '\x1b[0;1m', prompt = 'choix du joueur :')
+        player_name = self.menu_selector(self.players, 24, '\x1b[30;107m', '\x1b[0;1m', prompt = title)
         if player_name == 'nouveau joueur':
             os.system('clear')
             print(self.middle_window('entre ton pseudo :'), '\n\n\n')
@@ -284,11 +329,10 @@ class TUI_Linux(Game):
             self.players = self.players[:-1]
         self.player_name = player_name
 
-    def menu_player(self):
+    def menu_player(self, title):
         os.system('clear')
-        welcome = f'bienvenue {self.player_name}' 
         menu = ['statistiques', 'jouer', 'changer de joueur']
-        selection = self.menu_selector(menu, 24, '\x1b[30;107m', '\x1b[0;1m', prompt = welcome + '\n')
+        selection = self.menu_selector(menu, 24, '\x1b[30;107m', '\x1b[0;1m', prompt = title)
         print("\n\n\nA n'importe quel moment de la partie tu peux quitter en appuyant sur -> ctrl + C")
         if selection == 'statistiques':
             return 0
@@ -316,9 +360,11 @@ class TUI_Linux(Game):
         if b: 
             A = colorized_average(a)
             B = colorized_average(b)
+            self._print_char_by_char('STATISTIQUES :', 0.03,  middle = True, clear = True, new_line = True) 
+            print()
             print(self.middle_window(f"ta moyenne generale est de : {A}")) 
-            print(self.middle_window(f"le score de ta dernière partie est : {B}\n\n")) 
-            print(self.middle_window(f"Ta moyenne pour chaque table est de :\n"))
+            print(self.middle_window(f"le score de ta dernière partie est : {B}") + '\n') 
+            print(self.middle_window(f"Ta moyenne pour chaque table est de :") + '\n')
             for k,v in self.by_op_average.items():
                 V = colorized_average(v)
                 print(self.middle_window(f"Table de {k} : {V}"))
@@ -404,11 +450,15 @@ if __name__ == '__main__':
     launch = TUI_Linux()  
 
     while True:
-        launch.menu_select_player()
+        title = 'choix du joueur :'             #we could put titles into a dict ...
+        launch._print_char_by_char(title, 0.03, middle = True, clear = True, new_line = True)
+        launch.menu_select_player(title)
         launch.dict_maker()
         launch.by_operand_average()
+        title = f'bienvenue {launch.player_name}' 
+        launch._print_char_by_char(title, 0.03, middle = True, clear = True, new_line = True)
         while True:
-            choice = launch.menu_player()
+            choice = launch.menu_player(title)
             if choice == -1:
                 break
             elif choice == 0:
