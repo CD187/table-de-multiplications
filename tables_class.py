@@ -285,7 +285,7 @@ class TUI_Linux(Game):
         new_mode[3] = new_mode[3] & ~ECHO
         try:
             tcsetattr(sys.stdin,TCSADRAIN,new_mode)
-            i = 0
+            i = 1
             if middle : 
                 string = ' ' + self.middle_window(string) # ' ' IS A HACK ! WE HAVE TO FIX IT ! (check middle_win)
                 flag = 0
@@ -295,7 +295,7 @@ class TUI_Linux(Game):
                     if char == '\x1b':
                         flag = 1
                     if flag == 1:
-                        counter += 1
+                        i += 1
                     if flag == 1 and char == 'm':
                         break
             while i != len(string) + 1:
